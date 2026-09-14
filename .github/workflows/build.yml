@@ -86,7 +86,11 @@ jobs:
       - name: Prepare Buildozer
         run: |
           buildozer --version
-          buildozer android clean
+          if [ -d ".buildozer/android/platform/python-for-android" ]; then
+            buildozer android clean
+          else
+            echo "First build - skipping clean step"
+          fi
 
       - name: Build debug APK
         env:
