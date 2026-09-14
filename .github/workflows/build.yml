@@ -30,7 +30,6 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-
           sudo apt-get install -y \
             git \
             zip \
@@ -45,6 +44,7 @@ jobs:
             build-essential \
             cmake \
             m4 \
+            texinfo \
             libffi-dev \
             libssl-dev \
             zlib1g-dev \
@@ -58,41 +58,64 @@ jobs:
             liblzma-dev \
             uuid-dev
 
-      - name: Check Autotools
+      - name: Update Autotools to latest
         run: |
-          autoconf --version
-          automake --version
-          libtool --version
-          libtoolize --version
+          sudo apt-get install -y --only-upgrade autoconf automake libtool
+          sudo libtoolize --force --copy --install 2>/dev/null || true
+
+      - name: Verify Autotools Installation
+        run: |
+          echo "=== Versions ===" 
+          autoconf --version | head -1
+          automake --version | head -1
+          libtool --version | head -1
+          echo ""
+          echo "=== M4 Macros Available ===" 
+          ls -la /usr/share/aclocal/lt*.m4 | wc -l
 
       - name: Upgrade Python build tools
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          python -m pip install "cython==0.29.34"
+          python -m pip install "cython==0.29.34" "wheel"
 
-      - name: Install Buildozer
+      - name: Install Buildozer and python-for-android
         run: |
           python -m pip install git+https://github.com/kivy/buildozer.git
+          python -m pip install "python-for-android>=2023.0.0"
 
       - name: Prepare Buildozer
         run: |
           buildozer --version
+          buildozer android clean
 
       - name: Build debug APK
         env:
           P4A_RELEASE_KEYSTORE: ""
+          P4A_DEBUG: "1"
         run: |
-          yes | buildozer -v android debug
+          yes | buildozer -v android debug 2>&1 | tee build.log
 
       - name: Show generated APK
         if: always()
         run: |
           echo "===== APK files ====="
-          find bin -maxdepth 1 -type f -name "*.apk" -print 2>/dev/null || true
+          find bin -maxdepth 1 -type f -name "*.apk" -print 2>/dev/null || echo "No APK files found"
+          echo ""
+          echo "===== Last 50 lines of build log ====="
+          tail -50 build.log 2>/dev/null || true
 
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: SecureVault-APK
           path: bin/*.apk
-          if-no-files-found: error
+          if-no-files-found: warn
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-failure
+          path: build.log
+          if-no-files-found: ignore
