@@ -38,17 +38,25 @@ jobs:
             autoconf \
             automake \
             libtool \
+            libtool-bin \
             pkg-config \
-            zlib1g-dev \
-            libncurses5-dev \
-            libncursesw5-dev \
-            libtinfo6 \
+            gettext \
+            autopoint \
+            build-essential \
             cmake \
             libffi-dev \
             libssl-dev \
-            gettext \
-            autopoint \
-            build-essential
+            zlib1g-dev \
+            libncurses5-dev \
+            libncursesw5-dev \
+            libtinfo6
+
+      - name: Check Autotools
+        run: |
+          autoconf --version
+          automake --version
+          libtool --version
+          libtoolize --version
 
       - name: Upgrade Python build tools
         run: |
@@ -63,16 +71,9 @@ jobs:
         run: |
           buildozer --version
 
-      - name: Accept Android SDK licenses
-        run: |
-          mkdir -p "$HOME/.android"
-          touch "$HOME/.android/repositories.cfg"
-
-          mkdir -p "$HOME/.buildozer/android/platform"
-
-          echo "Android SDK licenses will be accepted automatically by Buildozer."
-
       - name: Build debug APK
+        env:
+          P4A_RELEASE_KEYSTORE: ""
         run: |
           yes | buildozer -v android debug
 
