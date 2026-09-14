@@ -24,13 +24,13 @@ android.archs = arm64-v8a,armeabi-v7a
 android.allow_backup = True
 android.enable_androidx = True
 
-# No Internet/storage permission is required.
-# Android Storage Access Framework is used for files.
+# Android Storage Access Framework is used.
+# No broad storage permission is required.
 
-# Add FileProvider resource
+# FileProvider resources
 android.add_resources = %(source.dir)s/res
 
-# Add FileProvider declaration to AndroidManifest.xml
+# FileProvider manifest declaration
 android.extra_manifest_xml = %(source.dir)s/android_manifest.xml
 
 
@@ -38,6 +38,3 @@ android.extra_manifest_xml = %(source.dir)s/android_manifest.xml
 
 log_level = 2
 warn_on_root = 1
-
-# Use current python-for-android development branch
-p4a.branch = develop
