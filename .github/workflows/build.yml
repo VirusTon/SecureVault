@@ -44,12 +44,19 @@ jobs:
             autopoint \
             build-essential \
             cmake \
+            m4 \
             libffi-dev \
             libssl-dev \
             zlib1g-dev \
             libncurses5-dev \
             libncursesw5-dev \
-            libtinfo6
+            libtinfo6 \
+            libbz2-dev \
+            libreadline-dev \
+            libsqlite3-dev \
+            tk-dev \
+            liblzma-dev \
+            uuid-dev
 
       - name: Check Autotools
         run: |
