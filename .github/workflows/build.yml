@@ -9,10 +9,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    name: Build SecureVault APK
+    runs-on: ubuntu-24.04
 
     steps:
-      - name: Checkout Code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -20,13 +21,53 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Build APK with Buildozer
-        uses: ArsenStrikers/buildozer-action@v1
-        with:
-          save_artifacts: true
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+
+          sudo apt-get install -y \
+            git \
+            zip \
+            unzip \
+            openjdk-17-jdk \
+            python3-pip \
+            python3-virtualenv \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            zlib1g-dev \
+            libncurses5-dev \
+            libncursesw5-dev \
+            libtinfo6 \
+            cmake \
+            libffi-dev \
+            libssl-dev \
+            gettext \
+            autopoint
+
+      - name: Upgrade Python build tools
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install "cython==0.29.34"
+
+      - name: Install Buildozer
+        run: |
+          python -m pip install git+https://github.com/kivy/buildozer.git
+
+      - name: Build debug APK
+        run: |
+          buildozer -v android debug
+
+      - name: List generated files
+        if: always()
+        run: |
+          echo "===== bin directory ====="
+          ls -lah bin/ || true
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: SecureVault-APK
           path: bin/*.apk
+          if-no-files-found: error
