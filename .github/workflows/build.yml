@@ -1,28 +1,32 @@
-Entername: Build Android APKon:push:branches: [ main, master ]workflow_dispatch:jobs:build:runs-on: ubuntu-lateststeps:
-- name: Checkout Repository
-  uses: actions/checkout@v4
+name: Build Android APK
 
-- name: Set up Python
-  uses: actions/setup-python@v5
-  with:
-    python-version: '3.11'
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
 
-- name: Install System Dependencies
-  run: |
-    sudo apt-get update
-    sudo apt-get install -y build-essential ccache git libffi-dev libssl-dev python3-dev zip unzip zlib1g-dev openjdk-17-jdk
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-- name: Install Buildozer & Dependencies
-  run: |
-    pip install --upgrade pip setuptools
-    pip install buildozer cython
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-- name: Build APK with Buildozer
-  run: |
-    yes | buildozer -v android debug
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-- name: Upload APK Artifact
-  uses: actions/upload-artifact@v4
-  with:
-    name: SecureVault-APK
-    path: bin/*.apk
+      - name: Build APK with Buildozer
+        uses: ArsenStrikers/buildozer-action@v1
+        with:
+          save_artifacts: true
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SecureVault-APK
+          path: bin/*.apk
