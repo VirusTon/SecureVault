@@ -30,6 +30,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
+
           sudo apt-get install -y \
             git \
             zip \
@@ -38,6 +39,7 @@ jobs:
             automake \
             libtool \
             libtool-bin \
+            libltdl-dev \
             pkg-config \
             gettext \
             autopoint \
@@ -58,34 +60,47 @@ jobs:
             liblzma-dev \
             uuid-dev
 
-      - name: Update Autotools to latest
+      - name: Verify Autotools and libffi dependencies
         run: |
-          sudo apt-get install -y --only-upgrade autoconf automake libtool
-          sudo libtoolize --force --copy --install 2>/dev/null || true
-
-      - name: Verify Autotools Installation
-        run: |
-          echo "=== Versions ==="
+          echo "=== Autoconf ==="
           autoconf --version | head -1
+
+          echo "=== Automake ==="
           automake --version | head -1
+
+          echo "=== Libtool ==="
           libtool --version | head -1
-          echo ""
-          echo "=== M4 Macros Available ==="
-          ls -la /usr/share/aclocal/lt*.m4 | wc -l
+
+          echo "=== libtoolize ==="
+          libtoolize --version | head -1
+
+          echo "=== libltdl ==="
+          dpkg -l | grep libltdl || true
+
+          echo "=== LT_SYS_SYMBOL_USCORE macro ==="
+          grep -R "LT_SYS_SYMBOL_USCORE" \
+            /usr/share/aclocal \
+            /usr/share/libtool \
+            /usr/share/libtoolize \
+            2>/dev/null || true
 
       - name: Upgrade Python build tools
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          python -m pip install "cython==0.29.34" "wheel"
+          python -m pip install "cython==0.29.34"
 
-      - name: Install Buildozer and python-for-android
+      - name: Install Buildozer
         run: |
           python -m pip install git+https://github.com/kivy/buildozer.git
+
+      - name: Install python-for-android
+        run: |
           python -m pip install "python-for-android>=2023.0.0"
 
       - name: Prepare Buildozer
         run: |
           buildozer --version
+
           if [ -d ".buildozer/android/platform/python-for-android" ]; then
             buildozer android clean
           else
@@ -97,6 +112,7 @@ jobs:
           P4A_RELEASE_KEYSTORE: ""
           P4A_DEBUG: "1"
         run: |
+          set -o pipefail
           yes | buildozer -v android debug 2>&1 | tee build.log
 
       - name: Find generated APK
@@ -107,30 +123,30 @@ jobs:
           echo "========================================"
 
           echo ""
-          echo "=== bin/ ==="
-          ls -lah bin 2>/dev/null || echo "bin directory does not exist"
+          echo "=== bin directory ==="
+          ls -lah bin 2>/dev/null || true
 
           echo ""
-          echo "=== All APK files in workspace ==="
+          echo "=== APK files ==="
           find . -type f -name "*.apk" -print 2>/dev/null || true
 
           echo ""
-          echo "=== All AAB files in workspace ==="
+          echo "=== AAB files ==="
           find . -type f -name "*.aab" -print 2>/dev/null || true
 
           echo ""
-          echo "=== Last 50 lines of build log ==="
-          tail -50 build.log 2>/dev/null || true
+          echo "=== Last 100 lines of build log ==="
+          tail -100 build.log 2>/dev/null || true
 
       - name: Upload APK
-        if: always()
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: SecureVault-APK
           path: |
             bin/*.apk
             **/*.apk
-          if-no-files-found: warn
+          if-no-files-found: error
 
       - name: Upload build log on failure
         if: failure()
